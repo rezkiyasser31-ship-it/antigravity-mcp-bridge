@@ -31,9 +31,10 @@ YOUR WORKFLOW AS MANAGER:
 3. When delegating:
    - Provide clear, actionable instructions with clear acceptance criteria and target directory.
    - Choose the model tier: 'flash' for standard tasks/scripts/edits, or 'pro' for deep reasoning, architectural refactors, or hard debugging.
-4. Review Antigravity's execution report (status, modified files, tool calls).
-5. If revisions are needed, use `send_feedback_to_antigravity` to guide Antigravity until the feature is solid.
-6. Summarize results and next steps back to the user.
+4. If the delegation tool returns `status: "still_running"`, it means Antigravity is working in the background. Wait a moment and use `inspect_antigravity_session` to check its progress.
+5. Review Antigravity's execution report (status, modified files, tool calls).
+6. If revisions are needed, use `send_feedback_to_antigravity` to guide Antigravity until the feature is solid.
+7. Summarize results and next steps back to the user.
 """
 
 app = MCPServer(
@@ -176,7 +177,7 @@ def run_agentapi_cmd(subcommand_args: List[str], cwd: Optional[str] = None) -> D
         log(f"Output not JSON, raw stdout: {stdout}")
         return {"raw_output": stdout}
 
-def wait_for_response(conversation_id: str, start_step_count: int, timeout_seconds: int = 240) -> Dict[str, Any]:
+def wait_for_response(conversation_id: str, start_step_count: int, timeout_seconds: int = 45) -> Dict[str, Any]:
     """Poll transcript.jsonl until the agent completes its response turn."""
     transcript_file = get_transcript_path(conversation_id)
     deadline = time.time() + timeout_seconds
@@ -225,9 +226,10 @@ def wait_for_response(conversation_id: str, start_step_count: int, timeout_secon
 
     log(f"Wait timed out for conv={conversation_id}")
     return {
-        "status": "timed_out",
+        "status": "still_running",
         "conversation_id": conversation_id,
-        "agent_response": last_content or "Antigravity task timed out.",
+        "message": "Task is taking a while and is still running in the background. Please use `inspect_antigravity_session` in a few moments to check the final results.",
+        "partial_response": last_content or "Still thinking...",
         "tools_executed": tools_called,
         "total_steps": len(steps)
     }
@@ -238,7 +240,7 @@ def delegate_to_antigravity(
     workspace_path: Optional[str] = None,
     acceptance_criteria: Optional[str] = None,
     model: str = "flash",
-    timeout_seconds: int = 240
+    timeout_seconds: int = 45
 ) -> str:
     """[MANAGER TOOL] Delegate a technical task or implementation directive to Antigravity.
     
@@ -289,7 +291,7 @@ def delegate_to_antigravity(
 def send_feedback_to_antigravity(
     conversation_id: str,
     feedback: str,
-    timeout_seconds: int = 240
+    timeout_seconds: int = 45
 ) -> str:
     """[MANAGER TOOL] Send managerial review, follow-up feedback, or next-phase instructions to Antigravity."""
     log(f"send_feedback_to_antigravity called: conv={conversation_id}")
