@@ -30,7 +30,6 @@ YOUR WORKFLOW AS MANAGER:
 2. DO NOT ask the user to copy-paste prompts into Antigravity. Instead, YOU directly delegate execution to Antigravity using `delegate_to_antigravity`.
 3. When delegating:
    - Provide clear, actionable instructions with clear acceptance criteria and target directory.
-   - Choose the model tier: 'flash' for standard tasks/scripts/edits, or 'pro' for deep reasoning, architectural refactors, or hard debugging.
 4. If the delegation tool returns `status: "still_running"`, it means Antigravity is working in the background. Wait a moment and use `inspect_antigravity_session` to check its progress.
 5. Review Antigravity's execution report (status, modified files, tool calls).
 6. If revisions are needed, use `send_feedback_to_antigravity` to guide Antigravity until the feature is solid.
@@ -239,7 +238,6 @@ def delegate_to_antigravity(
     task_description: str,
     workspace_path: Optional[str] = None,
     acceptance_criteria: Optional[str] = None,
-    model: str = "flash",
     timeout_seconds: int = 45
 ) -> str:
     """[MANAGER TOOL] Delegate a technical task or implementation directive to Antigravity.
@@ -266,7 +264,7 @@ def delegate_to_antigravity(
 
         formatted_prompt = "\n\n".join(prompt_parts)
 
-        cmd_res = run_agentapi_cmd(["new-conversation", f"--model={model}", formatted_prompt], cwd=ws)
+        cmd_res = run_agentapi_cmd(["new-conversation", "--model=flash", formatted_prompt], cwd=ws)
         conv_id = cmd_res.get("response", {}).get("newConversation", {}).get("conversationId")
 
         if not conv_id:
@@ -373,9 +371,9 @@ def inspect_antigravity_session(conversation_id: str, max_steps: int = 15) -> st
 
 # Aliases for backward compatibility
 @app.tool()
-def ask_antigravity(task: str, model: str = "flash", timeout_seconds: int = 180) -> str:
+def ask_antigravity(task: str, timeout_seconds: int = 180) -> str:
     """Send a task to Antigravity (alias for delegate_to_antigravity)."""
-    return delegate_to_antigravity(task_description=task, model=model, timeout_seconds=timeout_seconds)
+    return delegate_to_antigravity(task_description=task, timeout_seconds=timeout_seconds)
 
 @app.tool()
 def continue_antigravity_conversation(conversation_id: str, message: str, timeout_seconds: int = 180) -> str:
