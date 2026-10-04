@@ -42,8 +42,6 @@ app = MCPServer(
     instructions=MANAGER_INSTRUCTIONS
 )
 
-DEFAULT_WORKSPACE = str(Path.home() / "Desktop" / "link")
-
 USER_HOME = Path.home()
 LANGUAGE_SERVER_EXE = str(USER_HOME / r"AppData\Local\Programs\Antigravity\resources\bin\language_server.exe")
 AGENTAPI_BAT = str(USER_HOME / r".gemini\antigravity\bin\agentapi.bat")
@@ -57,7 +55,7 @@ def discover_antigravity_env(workspace_path: Optional[str] = None) -> Dict[str, 
     """Dynamically discover running language_server port, CSRF token, and project ID."""
     env = dict(os.environ)
     user_home = Path.home()
-    target_ws = (workspace_path or DEFAULT_WORKSPACE).lower().replace("\\", "/")
+    target_ws = (workspace_path or "").lower().replace("\\", "/")
 
     # 1. Discover language_server process details
     try:
@@ -161,7 +159,7 @@ def read_transcript_steps(transcript_file: Path) -> List[Dict[str, Any]]:
 def run_agentapi_cmd(subcommand_args: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
     """Run an agentapi command with auto-discovered environment and return JSON."""
     cmd = get_executable_command(subcommand_args)
-    working_dir = cwd or DEFAULT_WORKSPACE
+    working_dir = cwd
     custom_env = discover_antigravity_env(working_dir)
 
     log(f"Executing: cmd={cmd[0]} {cmd[1:3]} in cwd={working_dir}")
@@ -249,7 +247,7 @@ def wait_for_response(conversation_id: str, start_step_count: int, timeout_secon
 @app.tool()
 def delegate_to_antigravity(
     task_description: str,
-    workspace_path: Optional[str] = None,
+    workspace_path: str,
     acceptance_criteria: Optional[str] = None,
     model: str = "flash",
     timeout_seconds: int = 45
@@ -268,7 +266,7 @@ def delegate_to_antigravity(
     """
     log(f"delegate_to_antigravity called: task={task_description[:80]}...")
     try:
-        ws = workspace_path or DEFAULT_WORKSPACE
+        ws = workspace_path
         prompt_parts = [
             f"CRITICAL DIRECTIVE: You MUST execute this task inside the following directory: {ws}",
             f"Do not write files to your default project root. Use absolute paths or change directory to {ws} first.",
@@ -324,11 +322,11 @@ def send_feedback_to_antigravity(
         }, indent=2)
 
 @app.tool()
-def inspect_workspace(workspace_path: Optional[str] = None, max_depth: int = 2) -> str:
+def inspect_workspace(workspace_path: str, max_depth: int = 2) -> str:
     """[MANAGER TOOL] Scan the project directory tree to see existing files before planning."""
     log(f"inspect_workspace called: ws={workspace_path}")
     try:
-        ws = Path(workspace_path or DEFAULT_WORKSPACE)
+        ws = Path(workspace_path)
         if not ws.exists():
             return json.dumps({"workspace": str(ws), "exists": False, "files": []})
 
@@ -386,9 +384,9 @@ def inspect_antigravity_session(conversation_id: str, max_steps: int = 15) -> st
 
 # Aliases for backward compatibility
 @app.tool()
-def ask_antigravity(task: str, model: str = "flash", timeout_seconds: int = 180) -> str:
+def ask_antigravity(task: str, workspace_path: str, model: str = "flash", timeout_seconds: int = 180) -> str:
     """Send a task to Antigravity (alias for delegate_to_antigravity)."""
-    return delegate_to_antigravity(task_description=task, model=model, timeout_seconds=timeout_seconds)
+    return delegate_to_antigravity(task_description=task, workspace_path=workspace_path, model=model, timeout_seconds=timeout_seconds)
 
 @app.tool()
 def continue_antigravity_conversation(conversation_id: str, message: str, timeout_seconds: int = 180) -> str:
