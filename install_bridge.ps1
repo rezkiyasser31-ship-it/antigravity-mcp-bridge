@@ -44,36 +44,42 @@ if (Test-Path -Path $msixPath) {
 
 Write-Host "[+] Using Claude Desktop config at: $configPath"
 
-# 5. Read existing or create new config
-$configObj = @{ mcpServers = @{} }
-if (Test-Path $configPath) {
-    $content = Get-Content $configPath -Raw
-    if (-not [string]::IsNullOrWhiteSpace($content)) {
-        try {
-            $configObj = ConvertFrom-Json $content -AsHashtable
-            if (-not $configObj.ContainsKey("mcpServers")) {
-                $configObj["mcpServers"] = @{}
-            }
-        } catch {
-            Write-Host "[-] Existing config is invalid JSON. Creating a new one..."
-            $configObj = @{ mcpServers = @{} }
-        }
-    }
+# 5 & 6 & 7. Update JSON safely using Python (works on all versions)
+Write-Host "[*] Updating Claude config file..."
+$pythonScript = @"
+import json
+import os
+import sys
+
+config_path = r'$configPath'
+server_path = r'$serverPath'
+
+config = {}
+if os.path.exists(config_path):
+    try:
+        with open(config_path, 'r', encoding='utf-8-sig') as f:
+            content = f.read().strip()
+            if content:
+                config = json.loads(content)
+    except Exception as e:
+        print(f"[-] Could not parse existing config: {e}. Creating fresh.")
+
+if "mcpServers" not in config:
+    config["mcpServers"] = {}
+
+config["mcpServers"]["antigravity"] = {
+    "command": "python",
+    "args": [server_path]
 }
 
-# 6. Add Antigravity server
-if (-not $configObj.ContainsKey("mcpServers")) {
-    $configObj["mcpServers"] = @{}
-}
+with open(config_path, 'w', encoding='utf-8') as f:
+    json.dump(config, f, indent=2)
+"@
 
-$configObj["mcpServers"]["antigravity"] = @{
-    command = "python"
-    args = @($serverPath)
-}
-
-# 7. Save config
-$jsonContent = ConvertTo-Json -InputObject $configObj -Depth 10
-Set-Content -Path $configPath -Value $jsonContent -Encoding UTF8
+$pythonScriptFile = Join-Path $env:TEMP "patch_claude_config.py"
+Set-Content -Path $pythonScriptFile -Value $pythonScript -Encoding UTF8
+python $pythonScriptFile
+Remove-Item $pythonScriptFile -ErrorAction SilentlyContinue
 
 Write-Host "[+] Successfully added Antigravity bridge to Claude!"
 Write-Host ""
