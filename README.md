@@ -19,8 +19,9 @@ This MCP integration defines the relationship between **Claude Desktop** and **A
 
 ## How It Works in Practice
 
-1. **Brainstorming**: You chat with Claude in Claude Desktop to explore your idea, architecture, or feature.
-2. **Delegation**: When you decide to implement, you tell Claude: *"Go ahead and implement this in my project."*
-3. **Execution**: Claude calls `delegate_to_antigravity`, specifying the exact requirements and acceptance criteria.
-4. **Supervision**: Claude inspects Antigravity's output and tools executed. If any refinement is needed, Claude calls `send_feedback_to_antigravity` to iterate.
-5. **Report**: Claude gives you an executive summary of what was accomplished and discusses the next milestone with you.
+1. **Brainstorming & Planning**: You act as the Product Owner. Claude acts as the Expert Architect. Claude will *refuse* to just write code—instead, it will ask clarifying questions and build a strict, step-by-step Project Plan.
+2. **Approval**: You review the plan. Once you approve it, you tell Claude your local folder path (e.g., `C:\Users\Name\Desktop\MyProject`).
+3. **Delegation**: Claude will call `delegate_to_antigravity`, specifying the exact requirements and acceptance criteria for the first milestone.
+4. **Execution**: Antigravity wakes up in the background and does all the typing, terminal commands, and file creation.
+5. **Supervision**: Claude inspects Antigravity's output. If any refinement is needed, Claude calls `send_feedback_to_antigravity` to force Antigravity to fix bugs before reporting back to you.
+6. **Report**: Claude gives you an executive summary of the milestone and asks if you're ready for the next step.

@@ -11,7 +11,6 @@ try {
 } catch {
     Write-Host "[-] Python is not installed or not in PATH."
     Write-Host "Please install Python from python.org or the Microsoft Store."
-    Pause
     Exit
 }
 
@@ -20,7 +19,6 @@ Write-Host "[*] Installing required Python libraries (mcp, psutil)..."
 python -m pip install mcp psutil --quiet
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[-] Failed to install dependencies. Please check your Python installation."
-    Pause
     Exit
 }
 
@@ -81,4 +79,3 @@ Write-Host "[+] Successfully added Antigravity bridge to Claude!"
 Write-Host ""
 Write-Host "IMPORTANT: Please completely close and restart Claude Desktop for the changes to take effect."
 Write-Host ""
-Pause
