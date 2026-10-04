@@ -106,7 +106,7 @@ def discover_antigravity_env(workspace_path: Optional[str] = None) -> Dict[str, 
                             
                         for res in data.get("projectResources", {}).get("resources", []):
                             f_uri = res.get("folderUri", "").lower()
-                            if target_ws in f_uri or target_ws.replace(":", "%3a") in f_uri or "desktop" in f_uri:
+                            if target_ws in f_uri or target_ws.replace(":", "%3a") in f_uri:
                                 env['ANTIGRAVITY_PROJECT_ID'] = pid
                                 break
                         if 'ANTIGRAVITY_PROJECT_ID' in env:
@@ -270,7 +270,8 @@ def delegate_to_antigravity(
     try:
         ws = workspace_path or DEFAULT_WORKSPACE
         prompt_parts = [
-            f"Target Workspace: {ws}",
+            f"CRITICAL DIRECTIVE: You MUST execute this task inside the following directory: {ws}",
+            f"Do not write files to your default project root. Use absolute paths or change directory to {ws} first.",
             f"Task: {task_description}"
         ]
         if acceptance_criteria:
