@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from mcp.server.mcpserver import MCPServer
 
-LOG_FILE = Path(r"C:\Users\yasser\.gemini\antigravity-mcp-bridge\bridge.log")
+LOG_FILE = Path(__file__).parent / "bridge.log"
 
 def log(msg: str):
     """Write log messages to bridge.log."""
@@ -42,14 +42,15 @@ app = MCPServer(
     instructions=MANAGER_INSTRUCTIONS
 )
 
-DEFAULT_WORKSPACE = r"c:\Users\yasser\Desktop\link"
+DEFAULT_WORKSPACE = str(Path.home() / "Desktop" / "link")
 
-LANGUAGE_SERVER_EXE = r"C:\Users\yasser\AppData\Local\Programs\Antigravity\resources\bin\language_server.exe"
-AGENTAPI_BAT = r"C:\Users\yasser\.gemini\antigravity\bin\agentapi.bat"
+USER_HOME = Path.home()
+LANGUAGE_SERVER_EXE = str(USER_HOME / r"AppData\Local\Programs\Antigravity\resources\bin\language_server.exe")
+AGENTAPI_BAT = str(USER_HOME / r".gemini\antigravity\bin\agentapi.bat")
 
 BRAIN_DIRS = [
-    Path(r"C:\Users\yasser\.gemini\antigravity\brain"),
-    Path(r"C:\Users\yasser\.gemini\antigravity-ide\brain"),
+    USER_HOME / r".gemini\antigravity\brain",
+    USER_HOME / r".gemini\antigravity-ide\brain",
 ]
 
 def discover_antigravity_env(workspace_path: Optional[str] = None) -> Dict[str, str]:
