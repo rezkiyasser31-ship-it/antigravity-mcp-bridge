@@ -89,26 +89,37 @@ def discover_antigravity_env(workspace_path: Optional[str] = None) -> Dict[str, 
     # 2. Discover project_id for target workspace
     try:
         projects_dir = user_home / '.gemini' / 'config' / 'projects'
+        fallback_id = None
+        latest_mtime = 0
+
         if projects_dir.exists():
             for pfile in projects_dir.glob("*.json"):
                 try:
                     with open(pfile, "r", encoding="utf-8") as f:
                         data = json.load(f)
+                        pid = data.get("id")
+                        
+                        mtime = pfile.stat().st_mtime
+                        if pid and mtime > latest_mtime:
+                            latest_mtime = mtime
+                            fallback_id = pid
+                            
                         for res in data.get("projectResources", {}).get("resources", []):
                             f_uri = res.get("folderUri", "").lower()
-                            if target_ws in f_uri or target_ws.replace(":", "%3a") in f_uri or "desktop/link" in f_uri:
-                                env['ANTIGRAVITY_PROJECT_ID'] = data.get("id", "")
+                            if target_ws in f_uri or target_ws.replace(":", "%3a") in f_uri or "desktop" in f_uri:
+                                env['ANTIGRAVITY_PROJECT_ID'] = pid
                                 break
                         if 'ANTIGRAVITY_PROJECT_ID' in env:
                             break
                 except Exception:
                     pass
+
+        # Use fallback if exact match wasn't found
+        if not env.get('ANTIGRAVITY_PROJECT_ID') and fallback_id:
+            env['ANTIGRAVITY_PROJECT_ID'] = fallback_id
+
     except Exception as e:
         log(f"Error finding project_id: {e}")
-
-    # Fallbacks if discovery could not find project_id
-    if not env.get('ANTIGRAVITY_PROJECT_ID'):
-        env['ANTIGRAVITY_PROJECT_ID'] = "f6d0fddf-8f27-4232-b82d-794cdbc0a6dd"
 
     log(f"Discovered env: LS={env.get('ANTIGRAVITY_LS_ADDRESS')}, Project={env.get('ANTIGRAVITY_PROJECT_ID')}, CSRF={bool(env.get('ANTIGRAVITY_CSRF_TOKEN'))}")
     return env
