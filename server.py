@@ -257,8 +257,7 @@ def delegate_to_antigravity(
     task_description: str,
     workspace_path: str,
     acceptance_criteria: Optional[str] = None,
-    model: str = "flash",
-    timeout_seconds: int = 45
+    model: str = "flash"
 ) -> str:
     """[MANAGER TOOL] Delegate a technical task or implementation directive to Antigravity.
     
@@ -270,7 +269,6 @@ def delegate_to_antigravity(
         workspace_path: Working directory path (defaults to user project directory).
         acceptance_criteria: Specific requirements or checks Antigravity must fulfill before concluding.
         model: Model tier ('flash' for standard tasks, 'pro' for complex reasoning/refactors). Default 'flash'.
-        timeout_seconds: Maximum time to wait for Antigravity (default 240s).
     """
     log(f"delegate_to_antigravity called: task={task_description[:80]}...")
     try:
@@ -296,7 +294,7 @@ def delegate_to_antigravity(
                 "details": cmd_res
             }, indent=2)
 
-        result = wait_for_response(conv_id, start_step_count=0, timeout_seconds=timeout_seconds)
+        result = wait_for_response(conv_id, start_step_count=0, timeout_seconds=45)
         return json.dumps(result, indent=2)
     except Exception as e:
         log(f"Exception in delegate_to_antigravity: {traceback.format_exc()}")
@@ -309,8 +307,7 @@ def delegate_to_antigravity(
 @app.tool()
 def send_feedback_to_antigravity(
     conversation_id: str,
-    feedback: str,
-    timeout_seconds: int = 45
+    feedback: str
 ) -> str:
     """[MANAGER TOOL] Send managerial review, follow-up feedback, or next-phase instructions to Antigravity."""
     log(f"send_feedback_to_antigravity called: conv={conversation_id}")
@@ -319,7 +316,7 @@ def send_feedback_to_antigravity(
         initial_steps = len(read_transcript_steps(transcript_file))
 
         run_agentapi_cmd(["send-message", conversation_id, feedback])
-        result = wait_for_response(conversation_id, start_step_count=initial_steps, timeout_seconds=timeout_seconds)
+        result = wait_for_response(conversation_id, start_step_count=initial_steps, timeout_seconds=45)
         return json.dumps(result, indent=2)
     except Exception as e:
         log(f"Exception in send_feedback_to_antigravity: {traceback.format_exc()}")
@@ -392,14 +389,14 @@ def inspect_antigravity_session(conversation_id: str, max_steps: int = 15) -> st
 
 # Aliases for backward compatibility
 @app.tool()
-def ask_antigravity(task: str, workspace_path: str, model: str = "flash", timeout_seconds: int = 180) -> str:
+def ask_antigravity(task: str, workspace_path: str, model: str = "flash") -> str:
     """Send a task to Antigravity (alias for delegate_to_antigravity)."""
-    return delegate_to_antigravity(task_description=task, workspace_path=workspace_path, model=model, timeout_seconds=timeout_seconds)
+    return delegate_to_antigravity(task_description=task, workspace_path=workspace_path, model=model)
 
 @app.tool()
-def continue_antigravity_conversation(conversation_id: str, message: str, timeout_seconds: int = 180) -> str:
+def continue_antigravity_conversation(conversation_id: str, message: str) -> str:
     """Send follow-up to Antigravity (alias for send_feedback_to_antigravity)."""
-    return send_feedback_to_antigravity(conversation_id=conversation_id, feedback=message, timeout_seconds=timeout_seconds)
+    return send_feedback_to_antigravity(conversation_id=conversation_id, feedback=message)
 
 if __name__ == "__main__":
     log("Starting MCP Server...")
