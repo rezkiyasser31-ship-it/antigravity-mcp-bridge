@@ -257,7 +257,8 @@ def delegate_to_antigravity(
     task_description: str,
     workspace_path: str,
     acceptance_criteria: Optional[str] = None,
-    model: str = "flash"
+    model: str = "flash",
+    timeout_seconds: int = 45
 ) -> str:
     """[MANAGER TOOL] Delegate a technical task or implementation directive to Antigravity.
     
@@ -307,7 +308,8 @@ def delegate_to_antigravity(
 @app.tool()
 def send_feedback_to_antigravity(
     conversation_id: str,
-    feedback: str
+    feedback: str,
+    timeout_seconds: int = 45
 ) -> str:
     """[MANAGER TOOL] Send managerial review, follow-up feedback, or next-phase instructions to Antigravity."""
     log(f"send_feedback_to_antigravity called: conv={conversation_id}")
@@ -389,12 +391,12 @@ def inspect_antigravity_session(conversation_id: str, max_steps: int = 15) -> st
 
 # Aliases for backward compatibility
 @app.tool()
-def ask_antigravity(task: str, workspace_path: str, model: str = "flash") -> str:
+def ask_antigravity(task: str, workspace_path: str, model: str = "flash", timeout_seconds: int = 180) -> str:
     """Send a task to Antigravity (alias for delegate_to_antigravity)."""
     return delegate_to_antigravity(task_description=task, workspace_path=workspace_path, model=model)
 
 @app.tool()
-def continue_antigravity_conversation(conversation_id: str, message: str) -> str:
+def continue_antigravity_conversation(conversation_id: str, message: str, timeout_seconds: int = 180) -> str:
     """Send follow-up to Antigravity (alias for send_feedback_to_antigravity)."""
     return send_feedback_to_antigravity(conversation_id=conversation_id, feedback=message)
 
