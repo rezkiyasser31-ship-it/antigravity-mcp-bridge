@@ -27,26 +27,22 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $bridgeDir = Split-Path -Parent $scriptPath
 $serverPath = Join-Path $bridgeDir "server.py"
 
-# 4. Find Claude Desktop config
-$standardPath = "$env:APPDATA\Claude\claude_desktop_config.json"
-$msixPath = "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json"
+# 4. Find all Claude Desktop config paths
+$candidatePaths = @(
+    "$env:APPDATA\Claude\claude_desktop_config.json",
+    "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json"
+)
 
-$configPath = $null
-if (Test-Path -Path $msixPath) {
-    $configPath = $msixPath
-} else {
-    $configPath = $standardPath
+# 5 & 6 & 7. Update JSON safely using Python (works on all versions)
+Write-Host "[*] Updating Claude config files..."
+
+foreach ($configPath in $candidatePaths) {
     $configDir = Split-Path -Parent $configPath
     if (-not (Test-Path -Path $configDir)) {
         New-Item -ItemType Directory -Force -Path $configDir | Out-Null
     }
-}
 
-Write-Host "[+] Using Claude Desktop config at: $configPath"
-
-# 5 & 6 & 7. Update JSON safely using Python (works on all versions)
-Write-Host "[*] Updating Claude config file..."
-$pythonScript = @"
+    $pythonScript = @"
 import json
 import os
 import sys
@@ -74,12 +70,15 @@ config["mcpServers"]["antigravity"] = {
 
 with open(config_path, 'w', encoding='utf-8') as f:
     json.dump(config, f, indent=2)
+
+print(f"[+] Successfully merged Antigravity bridge into {config_path}!")
 "@
 
-$pythonScriptFile = Join-Path $env:TEMP "patch_claude_config.py"
-Set-Content -Path $pythonScriptFile -Value $pythonScript -Encoding UTF8
-python $pythonScriptFile
-Remove-Item $pythonScriptFile -ErrorAction SilentlyContinue
+    $pythonScriptFile = Join-Path $env:TEMP "patch_claude_config.py"
+    Set-Content -Path $pythonScriptFile -Value $pythonScript -Encoding UTF8
+    python $pythonScriptFile
+    Remove-Item $pythonScriptFile -ErrorAction SilentlyContinue
+}
 
 Write-Host "[+] Successfully added Antigravity bridge to Claude!"
 Write-Host ""
