@@ -28,10 +28,18 @@ $bridgeDir = Split-Path -Parent $scriptPath
 $serverPath = Join-Path $bridgeDir "server.py"
 
 # 4. Find all Claude Desktop config paths
-$candidatePaths = @(
+$candidatePaths = [System.Collections.Generic.List[string]]@(
     "$env:APPDATA\Claude\claude_desktop_config.json",
     "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json"
 )
+
+# Also detect Claude Multi-Account native profiles
+$multiProfiles = Join-Path (Split-Path -Parent $env:USERPROFILE) "$env:USERNAME\.claude_multi\native_profiles"
+if (Test-Path $multiProfiles) {
+    Get-ChildItem -Path $multiProfiles -Filter "claude_desktop_config.json" -Recurse | ForEach-Object {
+        $candidatePaths.Add($_.FullName)
+    }
+}
 
 # 5 & 6 & 7. Update JSON safely using Python (works on all versions)
 Write-Host "[*] Updating Claude config files..."
